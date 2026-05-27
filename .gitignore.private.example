@@ -1,0 +1,32 @@
+# Private ops repo — copy to .gitignore (see docs/PRIVATE-REPO.md)
+# Tracks real inventory, group_vars, WireGuard client configs, terraform.tfvars.
+# NEVER commit terraform state (contains IAM access keys and resource IDs).
+
+# Terraform local/cache (not state — use remote backend or offline backup)
+.terraform/
+.terraform.lock.hcl
+
+# State files — IAM keys and live infrastructure IDs
+*.tfstate
+*.tfstate.*
+terraform.tfstate.backup
+
+# SSH private keys stay on disk (~/.ssh); only paths in all.yml
+*.pem
+
+# Ansible transient
+ansible/*.retry
+
+# Local dev
+.env
+.venv/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Optional: export CA is not secret; uncomment to ignore
+# *.crt
+# lla-internal-ca.crt

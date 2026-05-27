@@ -27,6 +27,10 @@ git diff --cached
 git grep -E 'PrivateKey =|AKIA|876908012182|BEGIN (RSA|OPENSSH|EC )' HEAD || echo OK
 ```
 
+## Private backup repository
+
+For real `all.yml`, inventory, `terraform.tfvars`, and WireGuard configs, use a **separate private repo**. See **[PRIVATE-REPO.md](PRIVATE-REPO.md)** and `scripts/init-private-repo.sh`.
+
 ## If secrets were committed by mistake
 
 1. Rotate all exposed credentials (WireGuard peers, AWS IAM keys, Argo/Grafana passwords).
