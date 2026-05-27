@@ -1,0 +1,6 @@
+---
+- name: RKE2 first control plane node
+  hosts: master1
+  become: true
+  roles:
+    - rke2_server

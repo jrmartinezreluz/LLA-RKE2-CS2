@@ -1,0 +1,12 @@
+# External Secrets Operator
+# helm repo add external-secrets https://charts.external-secrets.io
+# helm install external-secrets external-secrets/external-secrets \
+#   -n external-secrets --create-namespace -f kubernetes/external-secrets/helm-values.yaml
+
+installCRDs: true
+
+serviceAccount:
+  create: true
+
+securityContext:
+  fsGroup: 65534

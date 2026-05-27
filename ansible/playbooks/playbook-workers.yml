@@ -1,0 +1,6 @@
+---
+- name: RKE2 worker agents
+  hosts: workers
+  become: true
+  roles:
+    - rke2_agent

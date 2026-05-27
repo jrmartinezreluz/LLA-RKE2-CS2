@@ -1,0 +1,9 @@
+---
+# Phase 1 — WireGuard only (SSH to public IP). Then configure VPN client on your laptop.
+# Phase 2 — With VPN up: playbook-master1.yml, export token, playbook-workers.yml
+#
+#   export RKE2_CLUSTER_TOKEN="$(ssh ubuntu@<master_private_ip> \
+#     'sudo cat /var/lib/rancher/rke2/server/node-token')"
+
+- name: Configure WireGuard VPN server
+  import_playbook: playbooks/playbook-wireguard.yml

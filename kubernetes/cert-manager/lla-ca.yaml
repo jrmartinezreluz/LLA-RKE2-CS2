@@ -1,0 +1,34 @@
+# Bootstrap: self-signed root -> CA ClusterIssuer -> wildcard cert in traefik namespace
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: lla-selfsigned-bootstrap
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: lla-internal-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: lla-internal-ca
+  secretName: lla-internal-ca-secret
+  duration: 87600h # 10y
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: lla-selfsigned-bootstrap
+    kind: ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: lla-internal-ca
+spec:
+  ca:
+    secretName: lla-internal-ca-secret

@@ -1,0 +1,17 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: lla-internal-wildcard
+  namespace: monitoring
+spec:
+  secretName: lla-internal-wildcard-tls
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: lla-internal-ca
+    kind: ClusterIssuer
+  dnsNames:
+    - grafana.lla.internal

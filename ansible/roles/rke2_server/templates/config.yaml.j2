@@ -1,0 +1,29 @@
+tls-san:
+  - master1
+  - {{ master_private_ip }}
+  - {{ api_fqdn }}
+  - {{ join_fqdn }}
+  - {{ ingress_fqdn }}
+
+cluster-cidr: 192.168.0.0/16
+service-cidr: 10.43.0.0/16
+
+secrets-encryption: true
+protect-kernel-defaults: true
+
+cni: calico
+
+# Bundled ingress disabled; Traefik installed via Helm (docs/TRAEFIK.md). No NGINX Ingress.
+disable:
+  - rke2-ingress-nginx
+  - rke2-ingress
+
+node-taint:
+  - "CriticalAddonsOnly=true:NoExecute"
+
+kube-proxy-arg:
+  - --proxy-mode=ipvs
+  - --ipvs-scheduler=rr
+
+kube-apiserver-arg:
+  - --audit-policy-file=/etc/rancher/rke2/audit-policy.yaml

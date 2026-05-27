@@ -1,0 +1,57 @@
+# kube-prometheus-stack — Prometheus + Grafana
+# helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+# helm install monitoring prometheus-community/kube-prometheus-stack \
+#   -n monitoring --create-namespace -f kubernetes/monitoring/helm-values.yaml
+
+fullnameOverride: monitoring
+
+defaultRules:
+  create: true
+
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
+
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 50Gi
+    nodeSelector:
+      node-role.kubernetes.io/worker: worker
+
+grafana:
+  enabled: true
+  defaultDashboardsEnabled: true
+  admin:
+    existingSecret: grafana-admin-credentials
+    userKey: admin-user
+    passwordKey: admin-password
+  ingress:
+    enabled: false
+  service:
+    type: ClusterIP
+  nodeSelector:
+    node-role.kubernetes.io/worker: worker
+
+prometheus-node-exporter:
+  hostRootFsMount:
+    enabled: true
+
+kube-state-metrics:
+  nodeSelector:
+    node-role.kubernetes.io/worker: worker

@@ -1,0 +1,32 @@
+---
+vpc_cidr: "10.0.0.0/16"
+wireguard_public_ip: "<wireguard_public_ip>"
+wireguard_vpn_cidr: "10.8.0.0/24"
+master_private_ip: "<master_private_ip>"
+
+internal_domain: "lla.internal"
+api_fqdn: "api.lla.internal"
+join_fqdn: "join.lla.internal"
+ingress_fqdn: "ingress.lla.internal"
+kubernetes_api_url: "https://api.lla.internal:6443"
+argocd_fqdn: "argocd.lla.internal"
+argocd_url: "https://argocd.lla.internal"
+grafana_fqdn: "grafana.lla.internal"
+grafana_url: "https://grafana.lla.internal"
+
+aws_region: "us-east-1"
+secrets_prefix: "lla-rke2-cs2"
+
+worker_private_ips:
+  - "<worker1_private_ip>"
+  - "<worker2_private_ip>"
+  - "<worker3_private_ip>"
+
+wireguard_port: 51820
+wireguard_server_address: "10.8.0.1/24"
+wireguard_vpn_cidr: "10.8.0.0/24"
+wireguard_peers: []
+
+cluster_token: "{{ lookup('env', 'RKE2_CLUSTER_TOKEN') | default('', true) }}"
+
+ansible_ssh_private_key_file: "~/.ssh/your-key.pem"

@@ -1,0 +1,24 @@
+project                 = "lla-rke2-cs2"
+aws_region              = "us-east-1"
+availability_zone       = "us-east-1a"
+key_name                = "your-ec2-key-pair"
+
+# Keep SSH restricted. WireGuard can be open for roaming users.
+ssh_ingress_cidr        = "203.0.113.10/32"
+wireguard_ingress_cidr  = "0.0.0.0/0"
+wireguard_vpn_cidr      = "10.8.0.0/24"
+
+instance_wireguard      = "t3.small"
+instance_master         = "t3.large"
+instance_workers        = "t3.medium"
+root_volume_size_gb     = 80
+
+internal_domain         = "lla.internal"
+api_record_name         = "api"
+join_record_name        = "join"
+ingress_record_name     = "ingress"
+argocd_record_name      = "argocd"
+grafana_record_name     = "grafana"
+wildcard_ingress        = true
+
+secrets_recovery_window_days = 7

@@ -1,0 +1,43 @@
+# Traefik NodePort behind Terraform ingress NLB (80/443 -> 30080/30443)
+# Route53: ingress.<domain>, *.<domain> -> NLB -> workers
+# Install: helm install traefik traefik/traefik -n traefik --create-namespace -f kubernetes/traefik/helm-values.yaml
+
+ingressClass:
+  enabled: true
+  isDefaultClass: true
+  name: traefik
+
+service:
+  type: NodePort
+
+ports:
+  web:
+    nodePort: 30080
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    nodePort: 30443
+    http:
+      tls:
+        enabled: true
+
+# Wildcard cert from cert-manager (kubernetes/cert-manager/certificate-wildcard.yaml)
+tlsStore:
+  default:
+    defaultCertificate:
+      secretName: lla-internal-wildcard-tls
+
+nodeSelector:
+  node-role.kubernetes.io/worker: worker
+
+# Run on workers only (master has CriticalAddonsOnly taint)
+tolerations: []
+
+providers:
+  kubernetesIngress:
+    enabled: true
+    ingressClass: traefik

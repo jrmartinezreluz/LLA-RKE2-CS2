@@ -1,0 +1,29 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+terraform.tfvars
+
+# Ansible secrets / generated
+ansible/inventory.ini
+ansible/group_vars/all.yml
+ansible/*.retry
+ansible/lla-windows-*.conf
+ansible/wg-client.conf
+ansible/jose-lla.conf
+ansible/client_*.key
+ansible/*.key
+
+# Keys and env
+*.pem
+*.crt
+lla-internal-ca.crt
+.env
+.venv/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/

@@ -1,0 +1,76 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: true
+
+- name: Install WireGuard and iptables
+  apt:
+    name:
+      - wireguard
+      - wireguard-tools
+      - iptables
+    state: present
+
+- name: Enable IPv4 forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    sysctl_set: true
+    state: present
+    reload: true
+
+- name: Ensure WireGuard config directory exists
+  file:
+    path: /etc/wireguard
+    state: directory
+    mode: "0700"
+
+- name: Generate server private key if missing
+  shell: wg genkey > /etc/wireguard/server_private.key
+  args:
+    creates: /etc/wireguard/server_private.key
+    executable: /bin/bash
+
+- name: Set permissions on server private key
+  file:
+    path: /etc/wireguard/server_private.key
+    mode: "0600"
+
+- name: Read server private key
+  slurp:
+    src: /etc/wireguard/server_private.key
+  register: wg_server_private_key
+
+- name: Set server private key fact for template
+  set_fact:
+    wg_server_private_key_content: "{{ wg_server_private_key.content | b64decode | trim }}"
+
+- name: Generate server public key
+  shell: set -o pipefail && cat /etc/wireguard/server_private.key | wg pubkey > /etc/wireguard/server_public.key
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: Deploy wg0 interface config
+  template:
+    src: wg0.conf.j2
+    dest: /etc/wireguard/wg0.conf
+    mode: "0600"
+  notify: Restart wireguard
+
+- name: Enable and start WireGuard
+  systemd:
+    name: wg-quick@wg0
+    enabled: true
+    state: started
+
+- name: Display server public key for client configuration
+  command: cat /etc/wireguard/server_public.key
+  register: wg_public_key_out
+  changed_when: false
+
+- name: Show WireGuard server public key
+  debug:
+    msg: >-
+      WireGuard server public key (use when configuring VPN clients):
+      {{ wg_public_key_out.stdout }}
