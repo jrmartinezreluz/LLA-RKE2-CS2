@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-IFACE="lla-wg"
+IFACE="${WG_INTERFACE:-lla-wg}"
 PID_FILE="/run/wireguard/${IFACE}.pid"
 
 if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then

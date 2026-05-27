@@ -3,8 +3,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CONF="$ROOT/ansible/wg-client.conf"
-IFACE="lla-wg"
+CONF="${WG_CONF:-$ROOT/ansible/wg-client.conf}"
+IFACE="${WG_INTERFACE:-lla-wg}"
 PID_FILE="/run/wireguard/${IFACE}.pid"
 
 if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then

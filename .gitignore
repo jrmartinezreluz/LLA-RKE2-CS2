@@ -12,8 +12,10 @@ ansible/*.retry
 ansible/lla-windows-*.conf
 ansible/wg-client.conf
 ansible/jose-lla.conf
+ansible/wg-client.conf
 ansible/client_*.key
 ansible/*.key
+terraform.tfstate.backup
 
 # Keys and env
 *.pem

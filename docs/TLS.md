@@ -15,6 +15,8 @@ Argo CD keeps `server.insecure: true` (TLS only at Traefik edge).
 
 ---
 
+See also [SECURITY-PUBLIC-REPO.md](SECURITY-PUBLIC-REPO.md) before publishing this repository.
+
 ## 1. Install cert-manager
 
 From WSL (VPN + `KUBECONFIG`):
