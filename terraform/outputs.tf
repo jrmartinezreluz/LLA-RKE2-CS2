@@ -82,6 +82,40 @@ output "eso_credentials_secret_name" {
   value = module.secrets.eso_credentials_secret_name
 }
 
+output "erpnext_ecr_repository_urls" {
+  value = var.enable_erpnext_ecr ? module.ecr[0].repository_urls : {}
+}
+
+output "erpnext_github_actions_role_arn" {
+  value       = var.enable_erpnext_ecr ? module.github_oidc[0].role_arn : null
+  description = "AWS_ROLE_ARN for erpnext-app GitHub Actions"
+}
+
+output "erpnext_rds_endpoint" {
+  value = var.enable_erpnext_rds ? module.rds[0].endpoint : null
+}
+
+output "erpnext_db_secret_names" {
+  value = var.enable_erpnext_rds ? module.rds[0].env_db_secret_names : {}
+}
+
+output "client_vpn_endpoint_id" {
+  value = var.enable_client_vpn ? module.client_vpn[0].endpoint_id : null
+}
+
+output "client_vpn_endpoint_dns" {
+  value = var.enable_client_vpn ? module.client_vpn[0].endpoint_dns_name : null
+}
+
+output "client_vpn_cidr" {
+  value = var.enable_client_vpn ? module.client_vpn[0].client_cidr_block : null
+}
+
+output "client_vpn_profile_path" {
+  description = "Generated OpenVPN profile (gitignored); run scripts/client-vpn-up-wsl.sh"
+  value       = var.enable_client_vpn ? module.client_vpn[0].profile_output_path : null
+}
+
 output "ansible_vars" {
   description = "Values for ansible/group_vars/all.yml (also used by sync-ansible-vars.sh)"
   value       = merge(module.compute.ansible_vars, module.loadbalancing.ansible_vars)

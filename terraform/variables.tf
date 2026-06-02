@@ -122,3 +122,72 @@ variable "secrets_recovery_window_days" {
   type        = number
   default     = 7
 }
+
+variable "enable_erpnext_rds" {
+  description = "Provision shared MariaDB RDS for ERPNext (no automated backups)"
+  type        = bool
+  default     = false
+}
+
+variable "enable_erpnext_ecr" {
+  description = "Provision ECR repositories for ERPNext container images"
+  type        = bool
+  default     = false
+}
+
+variable "erpnext_ecr_repositories" {
+  type    = list(string)
+  default = ["erpnext"]
+}
+
+variable "erpnext_rds_instance_class" {
+  type    = string
+  default = "db.t4g.micro"
+}
+
+variable "erpnext_rds_storage_gb" {
+  type    = number
+  default = 20
+}
+
+variable "github_org" {
+  description = "GitHub user/org for erpnext-app OIDC trust"
+  type        = string
+  default     = "jrmartinezreluz"
+}
+
+variable "erpnext_github_repo" {
+  description = "GitHub repo name for ERPNext image CI"
+  type        = string
+  default     = "erpnext-app"
+}
+
+variable "create_github_oidc_provider" {
+  description = "Create GitHub OIDC provider in IAM (false if account already has one)"
+  type        = bool
+  default     = true
+}
+
+variable "enable_client_vpn" {
+  description = "Provision AWS Client VPN endpoint (OpenVPN) for WSL/admin access"
+  type        = bool
+  default     = false
+}
+
+variable "client_vpn_cidr" {
+  description = "CIDR for AWS Client VPN clients (must not overlap VPC or WireGuard CIDRs)"
+  type        = string
+  default     = "10.100.0.0/22"
+}
+
+variable "client_vpn_split_tunnel" {
+  description = "Only route VPC traffic through Client VPN (recommended)"
+  type        = bool
+  default     = true
+}
+
+variable "client_vpn_client_name" {
+  description = "Common name for the generated client certificate / .ovpn profile"
+  type        = string
+  default     = "jose-wsl"
+}
