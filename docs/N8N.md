@@ -47,19 +47,17 @@ curl -k -u admin:<password> https://n8n-dev.lla.internal/healthz
 
 Basic auth password is printed once by the bootstrap script.
 
-## Architecture (dev)
+## Architecture
 
-- **n8n** + **in-cluster PostgreSQL 16** (PVC `local-path`, `Recreate` strategy)
-- **Traefik** ingress + **cert-manager** wildcard `*.lla.internal`
-- **External Secrets** → AWS Secrets Manager
-
-For stg/prod, disable `postgresql.enabled` in values and point `externalDatabase` at RDS PostgreSQL (Terraform extension — same pattern as ERPNext RDS).
+- **n8n** + **in-cluster PostgreSQL 16** per namespace (PVC `local-path`, `Recreate`)
+- **Traefik** + **cert-manager** wildcard `*.lla.internal`
+- **External Secrets** → AWS Secrets Manager (`lla-rke2-cs2/n8n/{env}/*`)
 
 ## Repos
 
 | Repo | Path |
 |------|------|
 | app-charts | `n8n/` |
-| platform-gitops | `clusters/lla-cs2/n8n/dev.yaml`, `argocd/applicationsets/n8n.yaml |
+| platform-gitops | `clusters/lla-cs2/n8n/{dev,stg,prod}.yaml` |
 
 See also [docs/REPOS.md](REPOS.md).
