@@ -7,9 +7,11 @@ resources:
   - namespace.yaml
   - https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
   - ingress.yaml
+  - external-secret-github-app.yaml
 
 patches:
   - path: argocd-cmd-params-cm.yaml
+  - path: argocd-cm-ingress-health.yaml
 
 # Do not add global labels to upstream install.yaml resources: Argo CD watches
 # ConfigMaps/Secrets with label app.kubernetes.io/part-of=argocd.

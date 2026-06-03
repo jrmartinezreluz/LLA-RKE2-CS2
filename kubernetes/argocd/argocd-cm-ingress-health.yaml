@@ -1,0 +1,21 @@
+# Traefik internal ingresses often have empty status.loadBalancer; Argo CD's
+# default Ingress health then stays Progressing forever. Treat rule-based ingress as Healthy.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  resource.customizations.health.networking.k8s.io_Ingress: |
+    hs = {}
+    if obj.spec ~= nil and obj.spec.rules ~= nil and #obj.spec.rules > 0 then
+      hs.status = "Healthy"
+      hs.message = "Ingress has routing rules (Traefik; no cloud LB status)"
+    else
+      hs.status = "Progressing"
+      hs.message = "Waiting for ingress rules"
+    end
+    return hs

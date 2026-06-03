@@ -1,0 +1,64 @@
+---
+- name: Ensure RKE2 credential provider directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - /var/lib/rancher/credentialprovider
+    - /var/lib/rancher/credentialprovider/bin
+
+- name: Discover latest ECR credential provider S3 key
+  shell: |
+    set -euo pipefail
+    for minor in 1.35 1.34 1.33 1.32 1.31 1.30; do
+      key=$(aws s3api list-objects-v2 --bucket amazon-eks --prefix "${minor}" \
+        --query "Contents[?ends_with(Key, 'bin/linux/amd64/ecr-credential-provider')].Key" \
+        --output text 2>/dev/null | tr '\t' '\n' | sort -V | tail -1 || true)
+      if [[ -n "${key}" && "${key}" != "None" ]]; then
+        echo "https://amazon-eks.s3.{{ ecr_provider_s3_region | default('us-west-2') }}.amazonaws.com/${key}"
+        exit 0
+      fi
+    done
+    echo "https://amazon-eks.s3.{{ ecr_provider_s3_region | default('us-west-2') }}.amazonaws.com/1.30.0/2024-05-12/bin/linux/amd64/ecr-credential-provider"
+  args:
+    executable: /bin/bash
+  register: ecr_provider_url
+  changed_when: false
+
+- name: Install ecr-credential-provider binary
+  get_url:
+    url: "{{ ecr_provider_url.stdout | trim }}"
+    dest: /var/lib/rancher/credentialprovider/bin/ecr-credential-provider
+    mode: "0755"
+
+- name: Deploy credential provider config
+  copy:
+    dest: /var/lib/rancher/credentialprovider/config.yaml
+    mode: "0644"
+    content: |
+      apiVersion: kubelet.config.k8s.io/v1
+      kind: CredentialProviderConfig
+      providers:
+        - name: ecr-credential-provider
+          matchImages:
+            - "*.dkr.ecr.*.amazonaws.com"
+            - "*.dkr.ecr.*.amazonaws.com.cn"
+            - "*.dkr.ecr-fips.*.amazonaws.com"
+          defaultCacheDuration: 12h
+          apiVersion: credentialprovider.kubelet.k8s.io/v1
+  notify: Restart rke2
+
+- name: Restart rke2-agent if present
+  systemd:
+    name: rke2-agent
+    state: restarted
+  when: ansible_facts.services['rke2-agent.service'] is defined
+  failed_when: false
+
+- name: Restart rke2-server if present
+  systemd:
+    name: rke2-server
+    state: restarted
+  when: ansible_facts.services['rke2-server.service'] is defined
+  failed_when: false

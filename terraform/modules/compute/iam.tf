@@ -49,6 +49,38 @@ resource "aws_iam_role_policy" "node_secrets" {
   policy = data.aws_iam_policy_document.node_secrets.json
 }
 
+data "aws_iam_policy_document" "node_ecr" {
+  count = length(var.ecr_repository_arns) > 0 ? 1 : 0
+
+  statement {
+    sid    = "EcrAuth"
+    effect = "Allow"
+    actions = [
+      "ecr:GetAuthorizationToken",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "EcrPull"
+    effect = "Allow"
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:BatchGetImage",
+    ]
+    resources = var.ecr_repository_arns
+  }
+}
+
+resource "aws_iam_role_policy" "node_ecr" {
+  count = length(var.ecr_repository_arns) > 0 ? 1 : 0
+
+  name   = "${var.project}-ecr-pull"
+  role   = aws_iam_role.rke2_node.id
+  policy = data.aws_iam_policy_document.node_ecr[0].json
+}
+
 resource "aws_iam_instance_profile" "rke2_node" {
   name = "${var.project}-rke2-node-profile"
   role = aws_iam_role.rke2_node.name

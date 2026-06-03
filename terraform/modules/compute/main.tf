@@ -44,12 +44,15 @@ resource "aws_security_group" "master" {
     security_groups = [aws_security_group.wireguard.id]
   }
 
-  ingress {
-    description = "SSH from VPN clients"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.wireguard_vpn_cidr]
+  dynamic "ingress" {
+    for_each = toset(var.vpn_client_cidrs)
+    content {
+      description = "SSH from VPN clients (${ingress.value})"
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      cidr_blocks = [ingress.value]
+    }
   }
 
   ingress {
@@ -92,20 +95,26 @@ resource "aws_security_group" "master" {
     security_groups = [aws_security_group.worker.id]
   }
 
-  ingress {
-    description = "Kubernetes API from VPN"
-    from_port   = 6443
-    to_port     = 6443
-    protocol    = "tcp"
-    cidr_blocks = [var.wireguard_vpn_cidr]
+  dynamic "ingress" {
+    for_each = toset(var.vpn_client_cidrs)
+    content {
+      description = "Kubernetes API from VPN (${ingress.value})"
+      from_port   = 6443
+      to_port     = 6443
+      protocol    = "tcp"
+      cidr_blocks = [ingress.value]
+    }
   }
 
-  ingress {
-    description = "RKE2 join from VPN"
-    from_port   = 9345
-    to_port     = 9345
-    protocol    = "tcp"
-    cidr_blocks = [var.wireguard_vpn_cidr]
+  dynamic "ingress" {
+    for_each = toset(var.vpn_client_cidrs)
+    content {
+      description = "RKE2 join from VPN (${ingress.value})"
+      from_port   = 9345
+      to_port     = 9345
+      protocol    = "tcp"
+      cidr_blocks = [ingress.value]
+    }
   }
 
   egress {
@@ -133,12 +142,15 @@ resource "aws_security_group" "worker" {
     security_groups = [aws_security_group.wireguard.id]
   }
 
-  ingress {
-    description = "SSH from VPN clients"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.wireguard_vpn_cidr]
+  dynamic "ingress" {
+    for_each = toset(var.vpn_client_cidrs)
+    content {
+      description = "SSH from VPN clients (${ingress.value})"
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      cidr_blocks = [ingress.value]
+    }
   }
 
   ingress {

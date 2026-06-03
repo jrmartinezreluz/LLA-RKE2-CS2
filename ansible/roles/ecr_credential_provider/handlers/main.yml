@@ -1,0 +1,4 @@
+---
+- name: Restart rke2
+  debug:
+    msg: "ECR credential provider installed; rke2 restart handled in tasks"

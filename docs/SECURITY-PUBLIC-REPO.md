@@ -24,7 +24,7 @@ This repo is safe to publish as a **pattern reference** when these files are **n
 ```bash
 git status
 git diff --cached
-git grep -E 'PrivateKey =|AKIA|876908012182|BEGIN (RSA|OPENSSH|EC )' HEAD || echo OK
+git grep -E 'PrivateKey = [^<{]|AKIA[0-9A-Z]{16}|876908012182|/mnt/c/|BEGIN (RSA|OPENSSH|EC ) PRIVATE' -- ':!docs/SECURITY-PUBLIC-REPO.md' || echo OK
 ```
 
 ## Private backup repository

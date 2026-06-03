@@ -3,6 +3,8 @@
 PrivateKey = <CLIENT_PRIVATE_KEY>
 Address = 10.8.0.2/24
 DNS = 10.0.0.2
+# WSL + wireguard-go: use 1280 to avoid SSH/scp/kubectl stalls (see scripts/wg-defaults.env)
+MTU = 1280
 
 [Peer]
 PublicKey = <SERVER_PUBLIC_KEY>

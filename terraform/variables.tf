@@ -189,5 +189,5 @@ variable "client_vpn_split_tunnel" {
 variable "client_vpn_client_name" {
   description = "Common name for the generated client certificate / .ovpn profile"
   type        = string
-  default     = "jose-wsl"
+  default     = "operator-wsl"
 }

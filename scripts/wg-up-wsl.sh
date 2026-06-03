@@ -3,9 +3,38 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CONF="${WG_CONF:-$ROOT/ansible/wg-client.conf}"
+# shellcheck source=/dev/null
+[[ -f "$ROOT/scripts/wg-defaults.env" ]] && source "$ROOT/scripts/wg-defaults.env"
+
+# Usage: sudo ./scripts/wg-up-wsl.sh [path/to/wg-client.conf]
+# MTU: set MTU = 1280 in [Interface], or scripts/wg-defaults.env (default 1280).
+# Note: `export WG_CONF=...` is NOT visible under sudo — pass path as $1 or inline:
+#   sudo WG_MTU=1280 ./scripts/wg-up-wsl.sh /path/to/wg-client.conf
+if [[ -n "${1:-}" ]]; then
+  CONF="$1"
+elif [[ -n "${WG_CONF:-}" ]]; then
+  CONF="$WG_CONF"
+elif [[ -f "$ROOT/ansible/wg-client.conf" ]]; then
+  CONF="$ROOT/ansible/wg-client.conf"
+else
+  echo "Copy ansible/wg-client.conf.example to ansible/wg-client.conf (private ops repo) or pass config path as \$1" >&2
+  exit 1
+fi
 IFACE="${WG_INTERFACE:-lla-wg}"
 PID_FILE="/run/wireguard/${IFACE}.pid"
+MSS_FLAG="/run/wireguard/${IFACE}.mss-clamp"
+
+read_mtu_from_conf() {
+  awk '
+    /^\[Interface\]/ { in_iface=1; next }
+    /^\[/ { in_iface=0 }
+    in_iface && /^MTU[[:space:]]*=/ {
+      gsub(/[[:space:]]/, "", $3)
+      print $3
+      exit
+    }
+  ' "$CONF"
+}
 
 if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   echo "Run with sudo: sudo $ROOT/scripts/wg-up-wsl.sh" >&2
@@ -46,7 +75,18 @@ wg setconf "$IFACE" <(wg-quick strip "$CONF")
 ADDR="$(awk -F' = ' '/^Address/{print $2; exit}' "$CONF" | tr -d ' ')"
 ip addr flush dev "$IFACE" 2>/dev/null || true
 ip addr add "$ADDR" dev "$IFACE"
-ip link set mtu 1420 up dev "$IFACE"
+CONF_MTU="$(read_mtu_from_conf || true)"
+WG_MTU="${CONF_MTU:-${WG_MTU:-1280}}"
+ip link set mtu "$WG_MTU" up dev "$IFACE"
+
+# Clamp TCP MSS + clear DSCP on traffic via tunnel (SSH, kubectl/Go, git over WSL+wireguard-go).
+if command -v iptables >/dev/null; then
+  iptables -t mangle -D OUTPUT -o "$IFACE" -p tcp -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || true
+  iptables -t mangle -A OUTPUT -o "$IFACE" -p tcp -j TCPMSS --clamp-mss-to-pmtu
+  iptables -t mangle -D OUTPUT -o "$IFACE" -j DSCP --set-dscp 0 2>/dev/null || true
+  iptables -t mangle -A OUTPUT -o "$IFACE" -j DSCP --set-dscp 0
+  touch "$MSS_FLAG"
+fi
 
 # Routes from AllowedIPs (Peer section)
 ALLOWED="$(awk -F' = ' '/^AllowedIPs/{print $2; exit}' "$CONF" | tr -d ' ')"
@@ -85,7 +125,7 @@ EOF
 fi
 
 echo ""
-echo "Tunnel ${IFACE} is up (wireguard-go, PID $(cat "$PID_FILE"))."
+echo "Tunnel ${IFACE} is up (wireguard-go, PID $(cat "$PID_FILE"), MTU ${WG_MTU})."
 echo "Verify:"
 echo "  sudo wg show"
 echo "  resolvectl query argocd.${INTERNAL_DOMAIN}"

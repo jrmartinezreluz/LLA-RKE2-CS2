@@ -111,15 +111,20 @@ argocd login argocd.lla.internal --username admin --password <password> --insecu
 
 ---
 
-## 5. Connect a Git repository
+## 5. Connect private Git repositories (GitHub App)
 
-UI: **Settings → Repositories → Connect repo**
+Repos privados (`platform-gitops`, `app-charts`) requieren autenticación. Usa **GitHub App** + Secrets Manager + ESO:
 
-Or CLI:
+**[GITHUB-APP-ARGOCD.md](GITHUB-APP-ARGOCD.md)** — guía paso a paso (recomendado).
+
+Resumen:
 
 ```bash
-argocd repo add https://github.com/your-org/your-repo.git \
-  --username <user> --password <token>
+# 1. Crear GitHub App en github.com/settings/apps (ver doc)
+# 2. Subir credenciales a AWS
+./scripts/setup-argocd-github-app-secret.sh
+# 3. Sincronizar en el cluster
+kubectl apply -f kubernetes/argocd/external-secret-github-app.yaml
 ```
 
 ---

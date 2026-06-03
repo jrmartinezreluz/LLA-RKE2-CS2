@@ -3,6 +3,7 @@ locals {
     rke2_cluster_token = "${var.project}/rke2/cluster-token"
     grafana_admin      = "${var.project}/monitoring/grafana-admin"
     argocd_admin       = "${var.project}/argocd/admin-password"
+    argocd_github_app  = "${var.project}/argocd/github-app"
     eso_credentials    = "${var.project}/bootstrap/eso-iam-credentials"
   }
 }
@@ -55,7 +56,10 @@ resource "aws_iam_user_policy" "external_secrets" {
         Sid      = "ReadProjectSecrets"
         Effect   = "Allow"
         Action   = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]
-        Resource = [for s in aws_secretsmanager_secret.this : s.arn]
+        Resource = concat(
+          [for s in aws_secretsmanager_secret.this : s.arn],
+          var.additional_secret_arns
+        )
       }
     ]
   })

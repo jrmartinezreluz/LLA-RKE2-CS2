@@ -1,0 +1,24 @@
+# Install once: ./scripts/install-ssh-lla-config.sh
+# Fixes WSL + WireGuard hangs on ssh/scp/git (no per-command -o flags needed).
+#
+# Note: Host 10.0.* does NOT match 10.0.11.50 — OpenSSH * does not cross '.'.
+# Use 10.*.*.* for VPC IPs and 10.8.*.* for the WG client subnet.
+
+Host 10.*.*.* 10.8.*.*
+  User ubuntu
+  IdentityFile ~/.ssh/your-ec2-key-pair.pem
+  IPQoS none
+  KexAlgorithms curve25519-sha256
+  Ciphers aes128-ctr
+  Compression no
+  ServerAliveInterval 30
+  ServerAliveCountMax 3
+  ConnectTimeout 30
+
+Host api.lla.internal *.lla.internal
+
+# GitHub (use github-arkhadia host from ~/.ssh/config)
+Host github.com github-arkhadia
+  IPQoS none
+  ServerAliveInterval 30
+  ConnectTimeout 30

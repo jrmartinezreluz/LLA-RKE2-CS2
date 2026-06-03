@@ -22,3 +22,15 @@ grafana_record_name     = "grafana"
 wildcard_ingress        = true
 
 secrets_recovery_window_days = 7
+
+# ERPNext platform (optional — enable when ready to provision DB + ECR)
+enable_erpnext_rds = false
+enable_erpnext_ecr = false
+erpnext_rds_instance_class = "db.t4g.micro"
+erpnext_rds_storage_gb     = 20
+
+# AWS Client VPN (OpenVPN) for WSL — see docs/CLIENT-VPN.md
+enable_client_vpn       = false
+client_vpn_cidr         = "10.100.0.0/22"
+client_vpn_split_tunnel = true
+client_vpn_client_name  = "operator-wsl"

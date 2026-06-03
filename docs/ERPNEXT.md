@@ -123,6 +123,14 @@ create_github_oidc_provider = false
 
 Add `clusters/lla-cs3/...` values and extend ApplicationSet with a cluster matrix generator — see [platform-gitops README](../../platform-gitops/README.md).
 
+## ECR image pull on nodes
+
+Nodes need the kubelet ECR credential provider (IAM alone is not enough). See [ECR-RKE2-CREDENTIAL-PROVIDER.md](ECR-RKE2-CREDENTIAL-PROVIDER.md).
+
+```bash
+/ark/LLA-RKE2-CS2/scripts/run-ecr-credential-provider-on-nodes.sh
+```
+
 ## Troubleshooting
 
 ```bash
@@ -132,3 +140,5 @@ argocd app sync lla-cs2-erpnext-dev   # if CLI configured
 ```
 
 ExternalSecret must show `SecretSynced` before Frappe site-creation jobs succeed.
+
+`ErrImagePull` + `no basic auth credentials` on ECR images → install credential provider on workers (doc above).

@@ -15,7 +15,7 @@
 
 Patterns reference only: [AWSK8S-RKE2-CS1](../AWSK8S-RKE2-CS1).
 
-**Repositories:** this public repo is a sanitized reference. Deployment-specific files (`all.yml`, inventory, `tfvars`, WireGuard configs) belong in a **private** ops repo — see [docs/PRIVATE-REPO.md](docs/PRIVATE-REPO.md).
+**Repositories:** this public repo is a sanitized reference. Deployment-specific files (`all.yml`, inventory, `tfvars`, WireGuard configs) belong in a **private** ops repo — see [docs/PRIVATE-REPO.md](docs/PRIVATE-REPO.md). Full stack map: [docs/REPOS.md](docs/REPOS.md).
 
 ---
 

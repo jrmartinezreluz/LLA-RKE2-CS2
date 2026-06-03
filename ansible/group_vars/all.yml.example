@@ -24,6 +24,7 @@ worker_private_ips:
 
 wireguard_port: 51820
 wireguard_server_address: "10.8.0.1/24"
+wireguard_mtu: 1280
 wireguard_vpn_cidr: "10.8.0.0/24"
 wireguard_peers: []
 

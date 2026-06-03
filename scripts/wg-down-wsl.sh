@@ -2,8 +2,11 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=/dev/null
+[[ -f "$ROOT/scripts/wg-defaults.env" ]] && source "$ROOT/scripts/wg-defaults.env"
 IFACE="${WG_INTERFACE:-lla-wg}"
 PID_FILE="/run/wireguard/${IFACE}.pid"
+MSS_FLAG="/run/wireguard/${IFACE}.mss-clamp"
 
 if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   echo "Run with sudo: sudo $ROOT/scripts/wg-down-wsl.sh" >&2
@@ -16,6 +19,13 @@ if [[ -f "$PID_FILE" ]]; then
 fi
 
 pkill -f "wireguard-go ${IFACE}" 2>/dev/null || true
+
+if [[ -f "$MSS_FLAG" ]] && command -v iptables >/dev/null; then
+  iptables -t mangle -D OUTPUT -o "$IFACE" -p tcp -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || true
+  iptables -t mangle -D OUTPUT -o "$IFACE" -j DSCP --set-dscp 0 2>/dev/null || true
+  rm -f "$MSS_FLAG"
+fi
+
 ip link delete "$IFACE" 2>/dev/null || true
 
 # Restore WSL resolv.conf if we replaced it for lla.internal

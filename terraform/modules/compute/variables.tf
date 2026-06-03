@@ -42,6 +42,12 @@ variable "wireguard_vpn_cidr" {
   type = string
 }
 
+variable "vpn_client_cidrs" {
+  type        = list(string)
+  description = "CIDRs for VPN clients (WireGuard + AWS Client VPN) allowed SSH/API"
+  default     = []
+}
+
 variable "instance_wireguard" {
   type = string
 }
@@ -61,5 +67,11 @@ variable "root_volume_size_gb" {
 variable "secrets_manager_arns" {
   type        = list(string)
   description = "Secrets Manager ARNs EC2 nodes may read"
+  default     = []
+}
+
+variable "ecr_repository_arns" {
+  type        = list(string)
+  description = "ECR repository ARNs nodes may pull"
   default     = []
 }
