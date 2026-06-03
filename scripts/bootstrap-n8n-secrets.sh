@@ -45,31 +45,22 @@ upsert_secret() {
 }
 
 grant_eso_access() {
-  local -a arns=("$@")
-  local account_id region policy_doc current n8n_wildcard
+  # Inline IAM user policies are limited to 2048 bytes — use wildcards, not per-secret ARNs.
+  local account_id region current project_wildcard
   account_id="$(aws sts get-caller-identity --query Account --output text)"
   region="${AWS_REGION}"
-  n8n_wildcard="arn:aws:secretsmanager:${region}:${account_id}:secret:${PROJECT}/n8n/*"
-  policy_doc="$(aws iam get-user-policy --user-name "$ESO_USER" --policy-name "$ESO_POLICY" --query PolicyDocument --output json)"
-  current="$(N8N_WILDCARD="$n8n_wildcard" python3 - <<'PY' "$policy_doc" "${arns[@]}"
-import json, os, sys
-doc = json.loads(sys.argv[1])
-existing = set()
-for stmt in doc.get("Statement", []):
-    resources = stmt.get("Resource", [])
-    if isinstance(resources, str):
-        resources = [resources]
-    for r in resources:
-        existing.add(r)
-for arn in sys.argv[2:]:
-    existing.add(arn)
-existing.add(os.environ["N8N_WILDCARD"])
-doc["Statement"] = [{
-    "Sid": "ReadProjectSecrets",
-    "Effect": "Allow",
-    "Action": ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"],
-    "Resource": sorted(existing),
-}]
+  project_wildcard="arn:aws:secretsmanager:${region}:${account_id}:secret:${PROJECT}/*"
+  current="$(PROJECT_WILDCARD="$project_wildcard" python3 - <<'PY'
+import json, os
+doc = {
+    "Version": "2012-10-17",
+    "Statement": [{
+        "Sid": "ReadProjectSecrets",
+        "Effect": "Allow",
+        "Action": ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"],
+        "Resource": [os.environ["PROJECT_WILDCARD"]],
+    }],
+}
 print(json.dumps(doc))
 PY
 )"
@@ -77,7 +68,7 @@ PY
     --user-name "$ESO_USER" \
     --policy-name "$ESO_POLICY" \
     --policy-document "$current" >/dev/null
-  echo "Updated IAM policy $ESO_POLICY (includes ${n8n_wildcard})"
+  echo "Updated IAM policy $ESO_POLICY (compact: ${project_wildcard})"
 }
 
 bootstrap_env() {
