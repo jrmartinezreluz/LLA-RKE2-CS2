@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# Create AWS Secrets Manager entries for n8n (dev) and grant ESO IAM read access.
+# Create AWS Secrets Manager entries for n8n and grant ESO IAM read access.
+# Usage:
+#   ENV=dev  AWS_PROFILE=lla ./bootstrap-n8n-secrets.sh
+#   ENVS="stg prod" AWS_PROFILE=lla ./bootstrap-n8n-secrets.sh
 set -euo pipefail
 
 PROJECT="${PROJECT:-lla-rke2-cs2}"
-ENV="${ENV:-dev}"
+ENV="${ENV:-}"
+ENVS="${ENVS:-}"
 AWS_REGION="${AWS_REGION:-us-east-1}"
 AWS_PROFILE="${AWS_PROFILE:-default}"
 ESO_USER="${ESO_USER:-${PROJECT}-external-secrets}"
@@ -76,10 +80,12 @@ PY
   echo "Updated IAM policy $ESO_POLICY (includes ${n8n_wildcard})"
 }
 
-main() {
-  require_aws
+bootstrap_env() {
+  local env="$1"
+  ENV_SECRET="${PROJECT}/n8n/${env}/env"
+  DB_SECRET="${PROJECT}/n8n/${env}/db"
 
-  local enc_key db_user db_pass db_name env_json db_json env_arn db_arn
+  local enc_key db_user db_pass db_name env_json db_json env_arn db_arn basic_pass
   enc_key="$(rand_hex)"
   db_user="n8n"
   db_pass="$(rand_pass)"
@@ -103,22 +109,42 @@ main() {
 
   grant_eso_access "$env_arn" "$db_arn"
 
+  local url
+  if [[ "$env" == "prod" ]]; then
+    url="https://n8n.lla.internal"
+  else
+    url="https://n8n-${env}.lla.internal"
+  fi
+
   cat <<EOF
 
-n8n secrets ready for environment: ${ENV}
+=== n8n ${env} ===
+  Secrets: ${ENV_SECRET}, ${DB_SECRET}
+  URL:     ${url}
+  Basic auth: admin / ${basic_pass}
+EOF
+}
 
-  ${ENV_SECRET}
-  ${DB_SECRET}
+main() {
+  require_aws
 
-Basic auth (optional layer in front of n8n UI):
-  user:  admin
-  pass:  ${basic_pass}
+  local -a targets=()
+  if [[ -n "$ENVS" ]]; then
+    read -r -a targets <<<"$ENVS"
+  elif [[ -n "$ENV" ]]; then
+    targets=("$ENV")
+  else
+    targets=(dev)
+  fi
 
-Next:
-  kubectl apply -f platform-gitops/argocd/applicationsets/n8n.yaml
-  # Argo CD syncs lla-cs2-n8n-${ENV} -> https://n8n-${ENV}.lla.internal
+  for env in "${targets[@]}"; do
+    bootstrap_env "$env"
+  done
 
-Store the basic auth password in your password manager; it is not printed again.
+  cat <<EOF
+
+Done. Argo CD apps: $(printf 'lla-cs2-n8n-%s ' "${targets[@]}")
+Restart ESO if secrets were added: kubectl -n external-secrets rollout restart deployment external-secrets
 EOF
 }
 
