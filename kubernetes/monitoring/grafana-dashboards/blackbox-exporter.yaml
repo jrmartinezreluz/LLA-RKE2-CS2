@@ -1,0 +1,97 @@
+# Blackbox / synthetics dashboard — loaded by Grafana sidecar.
+# Apply: ./scripts/kubectl-lla.sh apply -f kubernetes/monitoring/grafana-dashboards/blackbox-exporter.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-blackbox-exporter
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: LLA Monitoring
+data:
+  blackbox-exporter.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "graphTooltip": 1,
+      "panels": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                { "options": { "0": { "color": "red", "index": 0, "text": "DOWN" }, "1": { "color": "green", "index": 1, "text": "UP" } }, "type": "value" }
+              ],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+            }
+          },
+          "gridPos": { "h": 5, "w": 24, "x": 0, "y": 0 },
+          "id": 1,
+          "options": { "colorMode": "background", "graphMode": "none", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Estado por endpoint (probe_success)",
+          "type": "stat",
+          "targets": [{ "expr": "probe_success{job=~\"blackbox.*\"}", "legendFormat": "{{instance}}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 9, "w": 12, "x": 0, "y": 5 },
+          "id": 2,
+          "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+          "title": "Disponibilidad (1=OK)",
+          "type": "timeseries",
+          "targets": [{ "expr": "probe_success{job=~\"blackbox.*\"}", "legendFormat": "{{instance}} [{{tier}}]", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 9, "w": 12, "x": 12, "y": 5 },
+          "id": 3,
+          "fieldConfig": { "defaults": { "unit": "s" } },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+          "title": "Latencia de respuesta",
+          "type": "timeseries",
+          "targets": [{ "expr": "probe_duration_seconds{job=~\"blackbox.*\"}", "legendFormat": "{{instance}}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 9, "w": 12, "x": 0, "y": 14 },
+          "id": 4,
+          "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+          "title": "HTTP status code",
+          "type": "timeseries",
+          "targets": [{ "expr": "probe_http_status_code{job=~\"blackbox.*\"}", "legendFormat": "{{instance}}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 9, "w": 12, "x": 12, "y": 14 },
+          "id": 5,
+          "fieldConfig": { "defaults": { "unit": "d" } },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+          "title": "Días hasta expiración TLS",
+          "type": "timeseries",
+          "targets": [{ "expr": "(probe_ssl_earliest_cert_expiry{job=~\"blackbox.*\"} - time()) / 86400", "legendFormat": "{{instance}}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 23 },
+          "id": 6,
+          "options": { "showHeader": true },
+          "title": "Tabla de sintéticos",
+          "type": "table",
+          "targets": [
+            { "expr": "probe_success{job=~\"blackbox.*\"}", "format": "table", "instant": true, "refId": "A" },
+            { "expr": "probe_duration_seconds{job=~\"blackbox.*\"}", "format": "table", "instant": true, "refId": "B" }
+          ],
+          "transformations": [
+            { "id": "seriesToColumns", "options": { "byField": "instance" } },
+            { "id": "organize", "options": { "excludeByName": { "Time": true, "Time 1": true, "Time 2": true, "__name__": true, "__name__ 1": true, "__name__ 2": true, "job": true, "job 1": true, "job 2": true }, "renameByName": { "Value #A": "success", "Value #B": "duration_s", "instance": "endpoint", "tier": "tier" } } }
+          ]
+        }
+      ],
+      "schemaVersion": 39,
+      "tags": ["blackbox", "synthetics", "lla"],
+      "time": { "from": "now-6h", "to": "now" },
+      "title": "Blackbox Exporter - Synthetics",
+      "uid": "lla-blackbox",
+      "version": 1
+    }

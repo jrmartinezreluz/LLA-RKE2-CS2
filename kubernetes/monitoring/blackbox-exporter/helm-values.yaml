@@ -1,0 +1,39 @@
+# prometheus-blackbox-exporter — synthetic HTTP/TCP/ICMP probes
+# helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+# helm upgrade --install prometheus-blackbox-exporter prometheus-community/prometheus-blackbox-exporter \
+#   -n monitoring -f kubernetes/monitoring/blackbox-exporter/helm-values.yaml
+
+fullnameOverride: prometheus-blackbox-exporter
+
+nodeSelector:
+  node-role.kubernetes.io/worker: worker
+
+serviceMonitor:
+  enabled: true
+  labels:
+    release: monitoring
+
+config:
+  modules:
+    http_2xx:
+      prober: http
+      timeout: 10s
+      http:
+        valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+        follow_redirects: true
+        preferred_ip_protocol: ip4
+    # Internal TLS (cert-manager / private CA) — skip verify for synthetics
+    http_2xx_insecure:
+      prober: http
+      timeout: 10s
+      http:
+        valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+        follow_redirects: true
+        preferred_ip_protocol: ip4
+        tls_config:
+          insecure_skip_verify: true
+    tcp_connect:
+      prober: tcp
+      timeout: 5s
+      tcp:
+        preferred_ip_protocol: ip4

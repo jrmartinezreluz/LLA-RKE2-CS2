@@ -1,0 +1,49 @@
+# Alert routing — webhook URL from ExternalSecret alertmanager-webhook
+# Compatible with Slack incoming webhooks, Discord, PagerDuty, or generic HTTP receivers.
+# Apply after ExternalSecret is synced: kubectl apply -f kubernetes/monitoring/alertmanager-config.yaml
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: team-alerts
+  namespace: monitoring
+  labels:
+    alertmanagerConfig: monitoring
+spec:
+  route:
+    receiver: webhook-default
+    groupBy: ["alertname", "namespace", "severity"]
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 4h
+    routes:
+      - receiver: webhook-critical
+        matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+        continue: false
+      - receiver: webhook-warning
+        matchers:
+          - name: severity
+            matchType: "="
+            value: warning
+        continue: false
+  receivers:
+    - name: webhook-default
+      webhookConfigs:
+        - urlSecret:
+            name: alertmanager-webhook
+            key: url
+          sendResolved: true
+    - name: webhook-critical
+      webhookConfigs:
+        - urlSecret:
+            name: alertmanager-webhook
+            key: url
+          sendResolved: true
+    - name: webhook-warning
+      webhookConfigs:
+        - urlSecret:
+            name: alertmanager-webhook
+            key: url
+          sendResolved: true

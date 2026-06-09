@@ -1,10 +1,11 @@
 locals {
   secret_names = {
-    rke2_cluster_token = "${var.project}/rke2/cluster-token"
-    grafana_admin      = "${var.project}/monitoring/grafana-admin"
-    argocd_admin       = "${var.project}/argocd/admin-password"
-    argocd_github_app  = "${var.project}/argocd/github-app"
-    eso_credentials    = "${var.project}/bootstrap/eso-iam-credentials"
+    rke2_cluster_token   = "${var.project}/rke2/cluster-token"
+    grafana_admin          = "${var.project}/monitoring/grafana-admin"
+    alertmanager_webhook   = "${var.project}/monitoring/alertmanager-webhook"
+    argocd_admin           = "${var.project}/argocd/admin-password"
+    argocd_github_app      = "${var.project}/argocd/github-app"
+    eso_credentials        = "${var.project}/bootstrap/eso-iam-credentials"
   }
 }
 

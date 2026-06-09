@@ -91,6 +91,11 @@ output "erpnext_github_actions_role_arn" {
   description = "AWS_ROLE_ARN for erpnext-app GitHub Actions"
 }
 
+output "hotel_github_actions_role_arn" {
+  value       = var.enable_erpnext_ecr ? module.github_oidc[0].hotel_role_arn : null
+  description = "AWS_ROLE_ARN for hotel-app GitHub Actions"
+}
+
 output "erpnext_rds_endpoint" {
   value = var.enable_erpnext_rds ? module.rds[0].endpoint : null
 }

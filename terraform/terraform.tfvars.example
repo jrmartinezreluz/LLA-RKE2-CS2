@@ -26,8 +26,13 @@ secrets_recovery_window_days = 7
 # ERPNext platform (optional — enable when ready to provision DB + ECR)
 enable_erpnext_rds = false
 enable_erpnext_ecr = false
+erpnext_ecr_repositories = ["erpnext", "hotel-backend", "hotel-frontend"]
 erpnext_rds_instance_class = "db.t4g.micro"
 erpnext_rds_storage_gb     = 20
+
+# GitHub Actions OIDC repos (defaults: erpnext-app @ github_org, hotel-app @ github-arkhadia)
+# hotel_github_org  = "jrmartinezreluz"  # default; same as github_org
+# hotel_github_repo = "hotel-app"
 
 # AWS Client VPN (OpenVPN) for WSL — see docs/CLIENT-VPN.md
 enable_client_vpn       = false

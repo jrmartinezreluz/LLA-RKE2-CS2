@@ -1,12 +1,39 @@
-# kube-prometheus-stack — Prometheus + Grafana
+# kube-prometheus-stack — Prometheus + Grafana + Alertmanager
 # helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-# helm install monitoring prometheus-community/kube-prometheus-stack \
+# helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
 #   -n monitoring --create-namespace -f kubernetes/monitoring/helm-values.yaml
 
 fullnameOverride: monitoring
 
+# Default alert rules: cluster, nodes, pods, storage, API, kubelet, etc.
 defaultRules:
   create: true
+  rules:
+    alertmanager: true
+    etcd: true
+    configReloaders: true
+    general: true
+    k8s: true
+    kubeApiserverAvailability: true
+    kubeApiserverSlos: true
+    kubeApiserverHistogram: true
+    kubeApiserverBurnrate: true
+    kubelet: true
+    kubeProxy: true
+    kubePrometheusGeneral: true
+    kubePrometheusNodeRecording: true
+    kubernetesApps: true
+    kubernetesResources: true
+    kubernetesStorage: true
+    kubernetesSystem: true
+    kubeScheduler: true
+    kubeStateMetrics: true
+    network: true
+    node: true
+    nodeExporterAlerting: true
+    nodeExporterRecording: true
+    prometheus: true
+    prometheusOperator: true
 
 alertmanager:
   enabled: true
@@ -19,6 +46,29 @@ alertmanager:
           resources:
             requests:
               storage: 10Gi
+    nodeSelector:
+      node-role.kubernetes.io/worker: worker
+    # Pick up AlertmanagerConfig CRs labeled alertmanagerConfig=monitoring
+    alertmanagerConfigSelector:
+      matchLabels:
+        alertmanagerConfig: monitoring
+    alertmanagerConfigNamespaceSelector: {}
+  # Silence Watchdog/InfoInhibitor; real routing in alertmanager-config.yaml (AlertmanagerConfig CR)
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      receiver: "null"
+      group_by: ["alertname", "namespace", "severity"]
+      routes:
+        - receiver: "null"
+          matchers:
+            - alertname = "Watchdog"
+        - receiver: "null"
+          matchers:
+            - alertname = "InfoInhibitor"
+    receivers:
+      - name: "null"
 
 prometheus:
   prometheusSpec:
@@ -33,6 +83,45 @@ prometheus:
               storage: 50Gi
     nodeSelector:
       node-role.kubernetes.io/worker: worker
+    # Discover ServiceMonitors, PodMonitors, Probes and rules in all namespaces
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+    podMonitorSelector: {}
+    podMonitorNamespaceSelector: {}
+    probeSelector: {}
+    probeNamespaceSelector: {}
+    ruleSelector: {}
+    ruleNamespaceSelector: {}
+    # Scrape pods annotated with prometheus.io/scrape=true in any namespace
+    additionalScrapeConfigs:
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+            action: replace
+            target_label: __scheme__
+            regex: (https?)
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: pod
 
 grafana:
   enabled: true
@@ -47,6 +136,14 @@ grafana:
     type: ClusterIP
   nodeSelector:
     node-role.kubernetes.io/worker: worker
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL
+      provider:
+        foldersFromFilesStructure: true
+    datasources:
+      enabled: true
 
 prometheus-node-exporter:
   hostRootFsMount:
@@ -55,3 +152,16 @@ prometheus-node-exporter:
 kube-state-metrics:
   nodeSelector:
     node-role.kubernetes.io/worker: worker
+
+# CoreDNS metrics (pods + service)
+coreDns:
+  enabled: true
+
+kubeControllerManager:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+
+kubeEtcd:
+  enabled: false

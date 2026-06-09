@@ -59,6 +59,12 @@ module "github_oidc" {
   github_org            = var.github_org
   github_repo           = var.erpnext_github_repo
   ecr_repository_arns   = values(module.ecr[0].repository_arns)
+  hotel_github_repo     = var.hotel_github_repo
+  hotel_github_org      = var.hotel_github_org
+  hotel_ecr_repository_arns = compact([
+    try(module.ecr[0].repository_arns["hotel-backend"], ""),
+    try(module.ecr[0].repository_arns["hotel-frontend"], ""),
+  ])
   create_oidc_provider  = var.create_github_oidc_provider
 }
 

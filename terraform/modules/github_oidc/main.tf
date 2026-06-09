@@ -82,3 +82,66 @@ resource "aws_iam_role_policy" "erpnext_ecr_push" {
     ]
   })
 }
+
+resource "aws_iam_role" "hotel_github_actions" {
+  count = length(var.hotel_ecr_repository_arns) > 0 ? 1 : 0
+
+  name = "${var.project}-github-actions-hotel"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Federated = local.github_oidc_arn
+      }
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+        }
+        StringLike = {
+          "token.actions.githubusercontent.com:sub" = "repo:${var.hotel_github_org}/${var.hotel_github_repo}:*"
+        }
+      }
+    }]
+  })
+
+  tags = {
+    Name    = "${var.project}-github-actions-hotel"
+    Project = var.project
+  }
+}
+
+resource "aws_iam_role_policy" "hotel_ecr_push" {
+  count = length(var.hotel_ecr_repository_arns) > 0 ? 1 : 0
+
+  name = "ecr-push"
+  role = aws_iam_role.hotel_github_actions[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "EcrAuth"
+        Effect   = "Allow"
+        Action   = ["ecr:GetAuthorizationToken"]
+        Resource = "*"
+      },
+      {
+        Sid    = "EcrPushPull"
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:PutImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+        ]
+        Resource = var.hotel_ecr_repository_arns
+      }
+    ]
+  })
+}

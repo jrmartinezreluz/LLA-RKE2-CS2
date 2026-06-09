@@ -1,0 +1,133 @@
+# Custom PrometheusRule — synthetics + pod/application alerts
+# Apply: kubectl apply -f kubernetes/monitoring/prometheus-rules-custom.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: lla-custom-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: lla.synthetics
+      rules:
+        - alert: BlackboxProbeFailed
+          expr: probe_success == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Synthetic probe failed for {{ $labels.instance }}"
+            description: "Blackbox probe to {{ $labels.instance }} (job {{ $labels.job }}) has been failing for more than 2 minutes."
+
+        - alert: BlackboxProbeSlow
+          expr: probe_duration_seconds > 5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Slow synthetic probe for {{ $labels.instance }}"
+            description: "Probe to {{ $labels.instance }} took {{ $value | humanizeDuration }} (threshold 5s)."
+
+        - alert: BlackboxSslCertExpiringSoon
+          expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 14
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "TLS certificate expiring soon for {{ $labels.instance }}"
+            description: "Certificate for {{ $labels.instance }} expires in less than 14 days."
+
+    - name: lla.pods
+      rules:
+        - alert: PodNotReady
+          expr: |
+            sum by (namespace, pod) (
+              kube_pod_status_ready{condition="true", job="kube-state-metrics"} == 0
+            )
+            * on (namespace, pod) group_left(label_app)
+            kube_pod_labels{job="kube-state-metrics"}
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} not ready"
+            description: "Pod has been not Ready for more than 10 minutes."
+
+        - alert: PodHighRestartRate
+          expr: |
+            increase(kube_pod_container_status_restarts_total{job="kube-state-metrics"}[1h]) > 5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} restarting frequently"
+            description: "Container {{ $labels.container }} restarted {{ $value | humanize }} times in the last hour."
+
+        - alert: PodCrashLooping
+          expr: |
+            max_over_time(
+              kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff", job="kube-state-metrics"}[5m]
+            ) >= 1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} in CrashLoopBackOff"
+            description: "Container {{ $labels.container }} is crash looping."
+
+        - alert: DeploymentReplicasMismatch
+          expr: |
+            (
+              kube_deployment_spec_replicas{job="kube-state-metrics"}
+              != kube_deployment_status_replicas_available{job="kube-state-metrics"}
+            )
+            and (
+              changes(kube_deployment_status_replicas_updated{job="kube-state-metrics"}[10m]) == 0
+            )
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} replica mismatch"
+            description: "Available replicas do not match desired count for 15+ minutes."
+
+    - name: lla.cluster
+      rules:
+        - alert: NodeNotReady
+          expr: kube_node_status_condition{condition="Ready", status="true", job="kube-state-metrics"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Node {{ $labels.node }} not ready"
+            description: "Node has been NotReady for more than 5 minutes."
+
+        - alert: NodeMemoryPressure
+          expr: kube_node_status_condition{condition="MemoryPressure", status="true", job="kube-state-metrics"} == 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node {{ $labels.node }} under memory pressure"
+
+        - alert: NodeDiskPressure
+          expr: kube_node_status_condition{condition="DiskPressure", status="true", job="kube-state-metrics"} == 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node {{ $labels.node }} under disk pressure"
+
+        - alert: PersistentVolumeFillingUp
+          expr: |
+            (
+              kubelet_volume_stats_available_bytes{job="kubelet"}
+              / kubelet_volume_stats_capacity_bytes{job="kubelet"}
+            ) < 0.15
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} almost full"
+            description: "Less than 15% free space remaining on volume."

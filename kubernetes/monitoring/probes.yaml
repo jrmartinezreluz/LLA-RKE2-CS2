@@ -1,0 +1,73 @@
+# Synthetic probes (blackbox_exporter) — edit hosts for your environment.
+# Requires: prometheus-blackbox-exporter in namespace monitoring.
+# Apply: kubectl apply -f kubernetes/monitoring/probes.yaml
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: platform-https
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  jobName: blackbox-platform-https
+  interval: 30s
+  scrapeTimeout: 15s
+  module: http_2xx_insecure
+  prober:
+    url: prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - https://grafana.lla.internal/
+        - https://argocd.lla.internal/
+      labels:
+        tier: platform
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: kubernetes-api-tcp
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  jobName: blackbox-k8s-api
+  interval: 30s
+  scrapeTimeout: 10s
+  module: tcp_connect
+  prober:
+    url: prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - api.lla.internal:6443
+      labels:
+        tier: control-plane
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: apps-https
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  jobName: blackbox-apps-https
+  interval: 60s
+  scrapeTimeout: 15s
+  module: http_2xx_insecure
+  prober:
+    url: prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - https://hotel-dev.lla.internal/api/health
+        - https://hotel-dev.lla.internal/healthz
+        - https://n8n-dev.lla.internal/healthz
+        - https://erpnext-dev.lla.internal/
+      labels:
+        tier: application

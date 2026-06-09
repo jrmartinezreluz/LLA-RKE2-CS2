@@ -38,6 +38,7 @@ Terraform creates:
 |-------------|---------|
 | `lla-rke2-cs2/rke2/cluster-token` | Optional store for join token |
 | `lla-rke2-cs2/monitoring/grafana-admin` | Grafana admin password |
+| `lla-rke2-cs2/monitoring/alertmanager-webhook` | Webhook URL for alerts (Slack, etc.) |
 | `lla-rke2-cs2/argocd/admin-password` | Argo CD admin (optional rotation) |
 | `lla-rke2-cs2/bootstrap/eso-iam-credentials` | IAM user keys for External Secrets Operator |
 

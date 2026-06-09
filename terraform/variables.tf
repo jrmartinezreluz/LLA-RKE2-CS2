@@ -162,6 +162,18 @@ variable "erpnext_github_repo" {
   default     = "erpnext-app"
 }
 
+variable "hotel_github_repo" {
+  description = "GitHub repo name for Grand LLA Hotel image CI"
+  type        = string
+  default     = "hotel-app"
+}
+
+variable "hotel_github_org" {
+  description = "GitHub org or user that owns hotel-app"
+  type        = string
+  default     = "jrmartinezreluz"
+}
+
 variable "create_github_oidc_provider" {
   description = "Create GitHub OIDC provider in IAM (false if account already has one)"
   type        = bool
