@@ -9,6 +9,7 @@ PROJECT="${PROJECT:-lla-rke2-cs2}"
 ENV="${ENV:-}"
 ENVS="${ENVS:-}"
 AWS_REGION="${AWS_REGION:-us-east-1}"
+export AWS_REGION AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-$AWS_REGION}"
 AWS_PROFILE="${AWS_PROFILE:-default}"
 ESO_USER="${ESO_USER:-${PROJECT}-external-secrets}"
 ESO_POLICY="${ESO_POLICY:-${PROJECT}-external-secrets-read}"
@@ -35,8 +36,12 @@ upsert_secret() {
   local name="$1"
   local payload="$2"
   if aws secretsmanager describe-secret --secret-id "$name" &>/dev/null; then
-    echo "Updating secret $name"
-    aws secretsmanager put-secret-value --secret-id "$name" --secret-string "$payload" >/dev/null
+    if [[ "${FORCE_ROTATE:-}" == "1" ]]; then
+      echo "Rotating secret $name"
+      aws secretsmanager put-secret-value --secret-id "$name" --secret-string "$payload" >/dev/null
+    else
+      echo "Secret $name already exists — keeping value (set FORCE_ROTATE=1 to rotate)"
+    fi
   else
     echo "Creating secret $name"
     aws secretsmanager create-secret --name "$name" --secret-string "$payload" >/dev/null

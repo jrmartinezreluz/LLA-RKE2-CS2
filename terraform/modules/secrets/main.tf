@@ -7,7 +7,14 @@ locals {
     argocd_github_app      = "${var.project}/argocd/github-app"
     eso_credentials        = "${var.project}/bootstrap/eso-iam-credentials"
   }
+
+  # Wildcard covers app secrets (n8n, erpnext, hotel, …) without listing each ARN.
+  eso_secret_arn = "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${var.project}/*"
 }
+
+data "aws_caller_identity" "current" {}
+
+data "aws_region" "current" {}
 
 resource "aws_secretsmanager_secret" "this" {
   for_each = local.secret_names
@@ -58,7 +65,7 @@ resource "aws_iam_user_policy" "external_secrets" {
         Effect   = "Allow"
         Action   = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]
         Resource = concat(
-          [for s in aws_secretsmanager_secret.this : s.arn],
+          [local.eso_secret_arn],
           var.additional_secret_arns
         )
       }
