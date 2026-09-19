@@ -1,5 +1,10 @@
 # LLA-RKE2-CS2
 
+> **Status: Historical / Legacy Reference**
+>
+> This repository is retained for learning/history and is **not** the current canonical implementation.
+> Current reusable examples: [platform-aws-eks-template](https://github.com/jrmartinezreluz/platform-aws-eks-template), [gitops-platform-template](https://github.com/jrmartinezreluz/gitops-platform-template).
+
 **Client:** LLA | **Author:** José Martinez | Arkhadia by GHC
 
 **Nonprod environment operated with production posture** — single-AZ VPC, private **RKE2** (1 master, 3 workers), **WireGuard-only** access, **AWS Secrets Manager**, **Prometheus + Grafana**. No backups in scope.
